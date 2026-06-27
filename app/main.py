@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from app.core.config import settings
 from app.core.exceptions import register_exception_handlers
+from app.api.v1 import auth
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -11,6 +12,10 @@ app = FastAPI(
 
 # Register unified exception handlers
 register_exception_handlers(app)
+
+# Register API routers
+app.include_router(auth.router, prefix=settings.API_V1_STR)
+
 
 @app.get("/health", tags=["health"])
 async def health_check():
