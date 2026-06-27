@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.api.deps import CurrentUserDep
 from app.services.asset_service import AssetService
+from app.services.import_pipeline import ImportPipeline
 from app.schemas.asset import (
     AssetCreateRequest,
     AssetUpdateRequest,
@@ -14,6 +15,7 @@ from app.schemas.asset import (
     AssetListResponse,
     AssetGraphResponse,
 )
+from app.schemas.import_schema import BulkImportRequest, ImportResult
 
 router = APIRouter(prefix="/assets", tags=["assets"])
 
@@ -140,3 +142,31 @@ async def get_asset_graph(
     service: AssetServiceDep,
 ) -> AssetGraphResponse:
     return await service.get_graph(asset_id)
+
+
+# ─── Bulk Import Endpoint ─────────────────────────────────────────────────────
+
+@router.post(
+    "/import",
+    response_model=ImportResult,
+    summary="Bulk import assets through the 5-stage idempotent pipeline",
+)
+async def bulk_import_assets(
+    payload: BulkImportRequest,
+    current_user: CurrentUserDep,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> ImportResult:
+    """
+    Bulk-import a list of assets through the 5-stage idempotent pipeline.
+
+    **Pipeline stages:**
+    1. **Validation** — schema check per item (non-blocking, collects errors)
+    2. **Normalization** — canonicalize domains, IPs, services, technologies
+    3. **Deduplication** — bulk lookup by `(type, value)` per tenant
+    4. **Merge / Create** — merge metadata & tags into existing, or create new
+    5. **Relationships** — map temp IDs to DB UUIDs and write graph edges
+
+    Returns detailed statistics: created, updated, failed, relationships_created.
+    """
+    pipeline = ImportPipeline(db=db, tenant_id=current_user.tenant_id)
+    return await pipeline.execute(payload.assets)
