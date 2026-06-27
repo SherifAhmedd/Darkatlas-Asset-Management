@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from app.core.config import settings
 from app.core.exceptions import register_exception_handlers
-from app.api.v1 import auth
+from app.api.v1 import auth, assets
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -15,6 +15,7 @@ register_exception_handlers(app)
 
 # Register API routers
 app.include_router(auth.router, prefix=settings.API_V1_STR)
+app.include_router(assets.router, prefix=settings.API_V1_STR)
 
 
 @app.get("/health", tags=["health"])
