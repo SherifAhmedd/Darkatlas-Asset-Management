@@ -53,4 +53,6 @@ jobs:
           POSTGRES_PORT: 5432
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: darkatlas_test
+          SECRET_KEY: "test_secret_key_secret_key_secret_key"
         run: pytest -v --tb=short

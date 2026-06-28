@@ -1,8 +1,14 @@
 from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, field_validator, model_validator
+from pydantic import BaseModel, field_validator
 
-
-ASSET_TYPES = ["domain", "subdomain", "ip_address", "service", "certificate", "technology"]
+ASSET_TYPES = [
+    "domain",
+    "subdomain",
+    "ip_address",
+    "service",
+    "certificate",
+    "technology",
+]
 ASSET_STATUSES = ["active", "stale", "archived"]
 RELATIONSHIP_TYPES = ["SUBDOMAIN_OF", "RESOLVES_TO", "USES", "RUNS_ON", "COVERS"]
 
@@ -15,6 +21,7 @@ class ImportAssetItem(BaseModel):
     only within this batch to define relationships between items.
     It is NOT the database UUID.
     """
+
     id: str  # temporary local reference ID (e.g. "a1")
     type: str
     value: str
@@ -24,11 +31,11 @@ class ImportAssetItem(BaseModel):
     metadata: Dict[str, Any] = {}
 
     # Relationship linkage keys (all reference other items' `id` in this batch)
-    parent: Optional[str] = None        # → SUBDOMAIN_OF
-    resolves_to: Optional[str] = None   # → RESOLVES_TO
-    covers: Optional[str] = None        # → COVERS
-    runs_on: Optional[str] = None       # → RUNS_ON
-    uses: Optional[str] = None          # → USES
+    parent: Optional[str] = None  # → SUBDOMAIN_OF
+    resolves_to: Optional[str] = None  # → RESOLVES_TO
+    covers: Optional[str] = None  # → COVERS
+    runs_on: Optional[str] = None  # → RUNS_ON
+    uses: Optional[str] = None  # → USES
 
     @field_validator("type")
     @classmethod
@@ -55,13 +62,16 @@ class ImportAssetItem(BaseModel):
 
 class BulkImportRequest(BaseModel):
     """Bulk import payload — a list of asset items to ingest."""
+
     assets: List[Dict[str, Any]]  # Raw dicts to allow per-item validation errors
 
 
 # ─── Response Schemas ──────────────────────────────────────────────────────────
 
+
 class ImportError(BaseModel):
     """Details of a single failed item in the import batch."""
+
     index: int
     temp_id: Optional[str] = None
     value: Optional[str] = None
@@ -73,6 +83,7 @@ class ImportResult(BaseModel):
     Detailed observability response returned after a bulk import.
     Summarizes exactly what happened during each stage of the pipeline.
     """
+
     status: str = "completed"
     processed: int
     created: int

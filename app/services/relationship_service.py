@@ -37,7 +37,7 @@ class RelationshipService:
         if not source:
             raise NotFoundException(
                 message="Source asset not found",
-                detail={"source_asset_id": str(payload.source_asset_id)}
+                detail={"source_asset_id": str(payload.source_asset_id)},
             )
 
         # Verify target asset belongs to this tenant
@@ -45,12 +45,18 @@ class RelationshipService:
         if not target:
             raise NotFoundException(
                 message="Target asset not found",
-                detail={"target_asset_id": str(payload.target_asset_id)}
+                detail={"target_asset_id": str(payload.target_asset_id)},
             )
 
         # Check for duplicate relationship
         existing = await self.rel_repo.get_existing_by_edge_tuples(
-            [(payload.source_asset_id, payload.target_asset_id, payload.relationship_type)]
+            [
+                (
+                    payload.source_asset_id,
+                    payload.target_asset_id,
+                    payload.relationship_type,
+                )
+            ]
         )
         if existing:
             raise ConflictException(
@@ -59,7 +65,7 @@ class RelationshipService:
                     "source_asset_id": str(payload.source_asset_id),
                     "target_asset_id": str(payload.target_asset_id),
                     "relationship_type": payload.relationship_type,
-                }
+                },
             )
 
         new_rel = Relationship(
@@ -84,5 +90,5 @@ class RelationshipService:
         if not deleted:
             raise NotFoundException(
                 message="Relationship not found",
-                detail={"relationship_id": str(relationship_id)}
+                detail={"relationship_id": str(relationship_id)},
             )

@@ -9,6 +9,7 @@ ALGORITHM = "HS256"
 
 # ─── Password Utilities ───────────────────────────────────────────────────────
 
+
 def hash_password(plain_password: str) -> str:
     """Hash a plain-text password using bcrypt."""
     salt = bcrypt.gensalt()
@@ -19,12 +20,12 @@ def hash_password(plain_password: str) -> str:
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a plain-text password against a bcrypt hash."""
     return bcrypt.checkpw(
-        plain_password.encode("utf-8"),
-        hashed_password.encode("utf-8")
+        plain_password.encode("utf-8"), hashed_password.encode("utf-8")
     )
 
 
 # ─── JWT Utilities ────────────────────────────────────────────────────────────
+
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """Create a signed JWT access token."""

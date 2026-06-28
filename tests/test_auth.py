@@ -13,8 +13,8 @@ Covers:
 import pytest
 from httpx import AsyncClient
 
-
 # ─── Registration ─────────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_register_user_returns_token(client: AsyncClient):
@@ -59,6 +59,7 @@ async def test_register_short_password_returns_422(client: AsyncClient):
 
 # ─── Login ────────────────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_login_with_valid_credentials_returns_token(client: AsyncClient):
     await client.post(
@@ -100,6 +101,7 @@ async def test_login_nonexistent_user_returns_401(client: AsyncClient):
 
 # ─── Protected Endpoints ──────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_unauthenticated_request_to_assets_returns_401(client: AsyncClient):
     resp = await client.get("/api/v1/assets")
@@ -117,6 +119,7 @@ async def test_invalid_token_returns_401(client: AsyncClient):
 
 # ─── Tenant Isolation via Registration ────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_two_registrations_get_different_tenant_ids(client: AsyncClient):
     """
@@ -124,10 +127,12 @@ async def test_two_registrations_get_different_tenant_ids(client: AsyncClient):
     their assets are completely isolated from one another.
     """
     # Register two users
-    r1 = await client.post("/api/v1/auth/register",
-                            json={"username": "tenant1", "password": "password123"})
-    r2 = await client.post("/api/v1/auth/register",
-                            json={"username": "tenant2", "password": "password123"})
+    r1 = await client.post(
+        "/api/v1/auth/register", json={"username": "tenant1", "password": "password123"}
+    )
+    r2 = await client.post(
+        "/api/v1/auth/register", json={"username": "tenant2", "password": "password123"}
+    )
     token1 = r1.json()["access_token"]
     token2 = r2.json()["access_token"]
     headers1 = {"Authorization": f"Bearer {token1}"}
@@ -136,8 +141,13 @@ async def test_two_registrations_get_different_tenant_ids(client: AsyncClient):
     # Tenant 1 creates an asset
     await client.post(
         "/api/v1/assets",
-        json={"type": "domain", "value": "tenant1-only.com", "source": "manual",
-              "tags": [], "metadata": {}},
+        json={
+            "type": "domain",
+            "value": "tenant1-only.com",
+            "source": "manual",
+            "tags": [],
+            "metadata": {},
+        },
         headers=headers1,
     )
 

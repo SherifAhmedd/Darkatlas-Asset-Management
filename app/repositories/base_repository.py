@@ -1,6 +1,6 @@
-from typing import Any, Generic, Optional, Sequence, Type, TypeVar
+from typing import Generic, Optional, Sequence, Type, TypeVar
 from uuid import UUID
-from sqlalchemy import select, update, delete
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.base import Base

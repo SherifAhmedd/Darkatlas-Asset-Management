@@ -1,13 +1,11 @@
-from typing import Any, Dict, Optional
-from pydantic import PostgresDsn, field_validator
+from typing import Any, Optional
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=True,
-        extra="ignore"
+        env_file=".env", env_file_encoding="utf-8", case_sensitive=True, extra="ignore"
     )
 
     PROJECT_NAME: str = "DarkAtlas Asset Management API"
@@ -33,14 +31,15 @@ class Settings(BaseSettings):
     def assemble_db_connection(cls, v: Optional[str], info: Any) -> Any:
         if isinstance(v, str) and v:
             return v
-        
+
         data = info.data
         user = data.get("POSTGRES_USER")
         password = data.get("POSTGRES_PASSWORD")
         server = data.get("POSTGRES_SERVER")
         port = data.get("POSTGRES_PORT")
         db = data.get("POSTGRES_DB")
-        
+
         return f"postgresql+asyncpg://{user}:{password}@{server}:{port}/{db}"
+
 
 settings = Settings()

@@ -10,14 +10,10 @@ class Relationship(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     source_asset_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("assets.id", ondelete="CASCADE"),
-        nullable=False
+        UUID(as_uuid=True), ForeignKey("assets.id", ondelete="CASCADE"), nullable=False
     )
     target_asset_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("assets.id", ondelete="CASCADE"),
-        nullable=False
+        UUID(as_uuid=True), ForeignKey("assets.id", ondelete="CASCADE"), nullable=False
     )
     relationship_type = Column(
         Enum(
@@ -26,9 +22,9 @@ class Relationship(Base):
             "USES",
             "RUNS_ON",
             "COVERS",
-            name="relationshiptype"
+            name="relationshiptype",
         ),
-        nullable=False
+        nullable=False,
     )
 
     __table_args__ = (
@@ -37,6 +33,6 @@ class Relationship(Base):
             "source_asset_id",
             "target_asset_id",
             "relationship_type",
-            name="uq_relationship_details"
+            name="uq_relationship_details",
         ),
     )

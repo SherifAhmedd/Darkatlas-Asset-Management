@@ -23,7 +23,9 @@ def get_relationship_service(
     return RelationshipService(db=db, tenant_id=current_user.tenant_id)
 
 
-RelationshipServiceDep = Annotated[RelationshipService, Depends(get_relationship_service)]
+RelationshipServiceDep = Annotated[
+    RelationshipService, Depends(get_relationship_service)
+]
 
 
 @router.post(

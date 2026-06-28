@@ -1,7 +1,7 @@
 import ipaddress
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple
-from uuid import UUID, uuid4
+from typing import Any, Dict, List, Tuple
+from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.asset import Asset
@@ -13,7 +13,6 @@ from app.schemas.import_schema import (
     ImportError,
     ImportResult,
 )
-
 
 # Mapping from payload linkage key → relationship type enum value
 LINKAGE_MAP = {
@@ -46,31 +45,33 @@ class ImportPipeline:
         """Run all 5 stages and return detailed statistics."""
         errors: List[ImportError] = []
 
-        # Stage 1: Validation 
+        # Stage 1: Validation
         valid_items: List[ImportAssetItem] = []
         for index, raw in enumerate(raw_items):
             try:
                 item = ImportAssetItem(**raw)
                 valid_items.append(item)
             except Exception as e:
-                errors.append(ImportError(
-                    index=index,
-                    temp_id=raw.get("id"),
-                    value=raw.get("value"),
-                    error=str(e),
-                ))
+                errors.append(
+                    ImportError(
+                        index=index,
+                        temp_id=raw.get("id"),
+                        value=raw.get("value"),
+                        error=str(e),
+                    )
+                )
 
-        # Stage 2: Normalization 
+        # Stage 2: Normalization
         for item in valid_items:
             item.value = self._normalize(item.type, item.value)
 
-        # Stage 3: Deduplication    
+        # Stage 3: Deduplication
         pairs: List[Tuple[str, str]] = [(item.type, item.value) for item in valid_items]
         existing_map: Dict[Tuple[str, str], Asset] = (
             await self.asset_repo.get_existing_by_type_value_pairs(pairs)
         )
 
-        # Stage 4: Merge / Create 
+        # Stage 4: Merge / Create
         created_count = 0
         updated_count = 0
         # Maps temp_id → DB UUID for Stage 5
@@ -117,13 +118,12 @@ class ImportPipeline:
                 self.db.add(new_asset)
                 await self.db.flush()
                 await self.db.refresh(new_asset)
-                
+
                 # Add to existing_map so subsequent duplicates in the same batch get merged
                 existing_map[key] = new_asset
-                
+
                 temp_id_to_uuid[item.id] = new_asset.id
                 created_count += 1
-
 
         # Stage 5: Relationship Mapping
         relationships_created = 0
@@ -143,15 +143,17 @@ class ImportPipeline:
                 target_uuid = temp_id_to_uuid.get(target_temp_id)
                 if not target_uuid:
                     # Target reference not found in this batch
-                    errors.append(ImportError(
-                        index=-1,
-                        temp_id=item.id,
-                        value=item.value,
-                        error=(
-                            f"Relationship mapping failed: "
-                            f"Target reference '{target_temp_id}' not found in batch"
-                        ),
-                    ))
+                    errors.append(
+                        ImportError(
+                            index=-1,
+                            temp_id=item.id,
+                            value=item.value,
+                            error=(
+                                f"Relationship mapping failed: "
+                                f"Target reference '{target_temp_id}' not found in batch"
+                            ),
+                        )
+                    )
                     relationship_errors += 1
                     continue
 
@@ -159,7 +161,9 @@ class ImportPipeline:
 
         # Deduplicate against existing relationships in DB
         if candidate_edges:
-            already_existing = await self.rel_repo.get_existing_by_edge_tuples(candidate_edges)
+            already_existing = await self.rel_repo.get_existing_by_edge_tuples(
+                candidate_edges
+            )
 
             for source_uuid, target_uuid, rel_type in candidate_edges:
                 if (source_uuid, target_uuid, rel_type) in already_existing:
@@ -187,7 +191,7 @@ class ImportPipeline:
             errors=errors,
         )
 
-    # Normalization Helpers 
+    # Normalization Helpers
 
     def _normalize(self, asset_type: str, value: str) -> str:
         """Canonicalize asset values based on type."""
@@ -201,7 +205,9 @@ class ImportPipeline:
                 # Validates and normalizes IP (handles leading zeros etc.)
                 return str(ipaddress.ip_address(value))
             except ValueError:
-                return value  # Return as-is; will surface as a validation error upstream
+                return (
+                    value  # Return as-is; will surface as a validation error upstream
+                )
 
         if asset_type == "service":
             # Normalize protocol to lowercase: "443/TCP" → "443/tcp"

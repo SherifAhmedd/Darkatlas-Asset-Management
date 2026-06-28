@@ -27,18 +27,17 @@ from app.main import app as fastapi_app
 from app.core.database import get_db
 from app.models.base import Base
 
-
 # Import all models so SQLAlchemy registers their tables with Base.metadata
-import app.models.user          # noqa: F401
-import app.models.asset         # noqa: F401
+import app.models.user  # noqa: F401
+import app.models.asset  # noqa: F401
 import app.models.relationship  # noqa: F401
 
 # ─── Connection parameters — resolved from env vars (match Docker config) ─────
-_HOST     = os.getenv("POSTGRES_SERVER", "localhost")
-_PORT     = int(os.getenv("POSTGRES_PORT", "5432"))
-_USER     = os.getenv("POSTGRES_USER", "postgres")
+_HOST = os.getenv("POSTGRES_SERVER", "localhost")
+_PORT = int(os.getenv("POSTGRES_PORT", "5432"))
+_USER = os.getenv("POSTGRES_USER", "postgres")
 _PASSWORD = os.getenv("POSTGRES_PASSWORD", "postgres")
-_TEST_DB  = "darkatlas_test"
+_TEST_DB = "darkatlas_test"
 _ADMIN_DSN = f"postgresql://{_USER}:{_PASSWORD}@{_HOST}:{_PORT}/postgres"
 
 TEST_DATABASE_URL = (
@@ -64,6 +63,7 @@ TestSessionLocal = async_sessionmaker(
 # Uses asyncio.new_event_loop() so it is 100% independent of pytest-asyncio's
 # per-function event loop — no event loop scope clash.
 
+
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_database():
     """
@@ -87,9 +87,7 @@ def setup_test_database():
         conn = await asyncpg.connect(_ADMIN_DSN)
         try:
             # WITH (FORCE) — terminates remaining connections (Postgres 13+)
-            await conn.execute(
-                f'DROP DATABASE IF EXISTS "{_TEST_DB}" WITH (FORCE)'
-            )
+            await conn.execute(f'DROP DATABASE IF EXISTS "{_TEST_DB}" WITH (FORCE)')
         finally:
             await conn.close()
 
@@ -110,8 +108,6 @@ def setup_test_database():
         _teardown_loop.close()
 
 
-
-
 @pytest_asyncio.fixture(scope="function")
 async def db_schema(setup_test_database):
     """
@@ -125,13 +121,13 @@ async def db_schema(setup_test_database):
         await conn.run_sync(Base.metadata.drop_all)
 
 
-
 @pytest_asyncio.fixture(scope="function")
 async def client(db_schema) -> AsyncGenerator[AsyncClient, None]:
     """
     Async HTTP test client with get_db overridden to use the test database.
     Each request gets its own session: commits on success, rolls back on error.
     """
+
     async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
         async with TestSessionLocal() as session:
             try:
@@ -151,8 +147,6 @@ async def client(db_schema) -> AsyncGenerator[AsyncClient, None]:
         yield ac
 
     fastapi_app.dependency_overrides.clear()
-
-
 
 
 @pytest_asyncio.fixture(scope="function")
@@ -185,8 +179,6 @@ async def second_auth_headers(client: AsyncClient) -> dict:
     )
     token = login_resp.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
-
-
 
 
 SAMPLE_DATASET = [

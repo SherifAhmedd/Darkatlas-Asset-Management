@@ -5,11 +5,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
+from fastapi.security import OAuth2PasswordRequestForm
+
 from app.core.database import get_db
 from app.core.security import hash_password, verify_password, create_access_token
 from app.core.exceptions import ConflictException, UnauthorizedException
 from app.models.user import User
-from app.schemas.auth import UserRegisterRequest, UserLoginRequest, TokenResponse
+from app.schemas.auth import UserRegisterRequest, TokenResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -35,8 +37,7 @@ async def register(
     result = await db.execute(select(User).where(User.username == payload.username))
     if result.scalar_one_or_none():
         raise ConflictException(
-            message="Username already taken",
-            detail={"username": payload.username}
+            message="Username already taken", detail={"username": payload.username}
         )
 
     # Create new user with a fresh tenant_id (one unique org namespace per user)
@@ -56,9 +57,6 @@ async def register(
     # Issue JWT token
     token = create_access_token(data={"sub": new_user.username})
     return TokenResponse(access_token=token)
-
-
-from fastapi.security import OAuth2PasswordRequestForm
 
 
 @router.post(

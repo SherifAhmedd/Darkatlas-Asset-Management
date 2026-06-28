@@ -59,7 +59,9 @@ class RelationshipRepository(BaseRepository[Relationship]):
             )
         )
         rows = result.all()
-        return {(r.source_asset_id, r.target_asset_id, r.relationship_type) for r in rows}
+        return {
+            (r.source_asset_id, r.target_asset_id, r.relationship_type) for r in rows
+        }
 
     async def get_by_source(self, source_asset_id: UUID) -> Sequence[Relationship]:
         """Fetch all outgoing relationships from a given source asset."""

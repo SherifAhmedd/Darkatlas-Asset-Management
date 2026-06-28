@@ -33,6 +33,7 @@ AssetServiceDep = Annotated[AssetService, Depends(get_asset_service)]
 
 # ─── CRUD Endpoints ───────────────────────────────────────────────────────────
 
+
 @router.get(
     "",
     response_model=AssetListResponse,
@@ -41,9 +42,13 @@ AssetServiceDep = Annotated[AssetService, Depends(get_asset_service)]
 async def list_assets(
     service: AssetServiceDep,
     asset_type: Optional[str] = Query(None, description="Filter by asset type"),
-    status_filter: Optional[str] = Query(None, alias="status", description="Filter by status"),
+    status_filter: Optional[str] = Query(
+        None, alias="status", description="Filter by status"
+    ),
     tag: Optional[str] = Query(None, description="Filter by tag name"),
-    value_contains: Optional[str] = Query(None, description="Substring search on value"),
+    value_contains: Optional[str] = Query(
+        None, description="Substring search on value"
+    ),
     offset: int = Query(0, ge=0, description="Pagination offset"),
     limit: int = Query(20, ge=1, le=100, description="Page size (max 100)"),
 ) -> AssetListResponse:
@@ -132,6 +137,7 @@ async def delete_asset(
 
 # ─── Graph Endpoint ───────────────────────────────────────────────────────────
 
+
 @router.get(
     "/{asset_id}/graph",
     response_model=AssetGraphResponse,
@@ -145,6 +151,7 @@ async def get_asset_graph(
 
 
 # ─── Bulk Import Endpoint ─────────────────────────────────────────────────────
+
 
 @router.post(
     "/import",

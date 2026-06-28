@@ -34,8 +34,7 @@ class AssetService:
         asset = await self.asset_repo.get_by_id(asset_id)
         if not asset:
             raise NotFoundException(
-                message="Asset not found",
-                detail={"asset_id": str(asset_id)}
+                message="Asset not found", detail={"asset_id": str(asset_id)}
             )
         return asset
 
@@ -71,7 +70,7 @@ class AssetService:
         if existing:
             raise ConflictException(
                 message="An asset with this type and value already exists",
-                detail={"type": payload.type, "value": payload.value}
+                detail={"type": payload.type, "value": payload.value},
             )
 
         now = datetime.now(timezone.utc)
@@ -113,8 +112,7 @@ class AssetService:
         asset = await self.asset_repo.update_status(asset_id, new_status)
         if not asset:
             raise NotFoundException(
-                message="Asset not found",
-                detail={"asset_id": str(asset_id)}
+                message="Asset not found", detail={"asset_id": str(asset_id)}
             )
         return asset
 
@@ -123,8 +121,7 @@ class AssetService:
         deleted = await self.asset_repo.delete_by_id(asset_id)
         if not deleted:
             raise NotFoundException(
-                message="Asset not found",
-                detail={"asset_id": str(asset_id)}
+                message="Asset not found", detail={"asset_id": str(asset_id)}
             )
 
     async def get_graph(self, asset_id: UUID) -> AssetGraphResponse:
@@ -134,7 +131,9 @@ class AssetService:
         and all relationships as edges.
         """
         root = await self.get_by_id(asset_id)
-        relationships: Sequence[Relationship] = await self.rel_repo.get_adjacent(asset_id)
+        relationships: Sequence[Relationship] = await self.rel_repo.get_adjacent(
+            asset_id
+        )
 
         # Collect all unique adjacent asset IDs
         adjacent_ids: set[UUID] = set()
@@ -149,12 +148,14 @@ class AssetService:
         for adj_id in adjacent_ids:
             adj_asset = await self.asset_repo.get_by_id(adj_id)
             if adj_asset:
-                nodes.append(GraphNode(
-                    id=adj_asset.id,
-                    type=adj_asset.type,
-                    value=adj_asset.value,
-                    status=adj_asset.status,
-                ))
+                nodes.append(
+                    GraphNode(
+                        id=adj_asset.id,
+                        type=adj_asset.type,
+                        value=adj_asset.value,
+                        status=adj_asset.status,
+                    )
+                )
 
         edges = [
             GraphEdge(

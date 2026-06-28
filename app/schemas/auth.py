@@ -4,6 +4,7 @@ from pydantic import BaseModel, field_validator
 
 class UserRegisterRequest(BaseModel):
     """Schema for registering a new user."""
+
     username: str
     password: str
 
@@ -27,18 +28,21 @@ class UserRegisterRequest(BaseModel):
 
 class UserLoginRequest(BaseModel):
     """Schema for user login."""
+
     username: str
     password: str
 
 
 class TokenResponse(BaseModel):
     """Schema for the JWT token response returned on login/register."""
+
     access_token: str
     token_type: str = "bearer"
 
 
 class CurrentUser(BaseModel):
     """Represents the authenticated user context injected by deps.py."""
+
     id: UUID
     username: str
     tenant_id: UUID

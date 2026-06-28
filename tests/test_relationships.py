@@ -14,15 +14,22 @@ Covers (per the rubric):
 import pytest
 from httpx import AsyncClient
 
-
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
-async def create_asset(client: AsyncClient, headers: dict, value: str, asset_type: str = "domain") -> str:
+
+async def create_asset(
+    client: AsyncClient, headers: dict, value: str, asset_type: str = "domain"
+) -> str:
     """Create an asset and return its UUID."""
     resp = await client.post(
         "/api/v1/assets",
-        json={"type": asset_type, "value": value, "source": "manual",
-              "tags": [], "metadata": {}},
+        json={
+            "type": asset_type,
+            "value": value,
+            "source": "manual",
+            "tags": [],
+            "metadata": {},
+        },
         headers=headers,
     )
     assert resp.status_code == 201, resp.text
@@ -51,6 +58,7 @@ async def create_relationship(
 
 # ─── Creation ─────────────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_create_relationship_returns_201(client: AsyncClient, auth_headers: dict):
     src = await create_asset(client, auth_headers, "sub.example.com", "subdomain")
@@ -65,21 +73,28 @@ async def test_create_relationship_returns_201(client: AsyncClient, auth_headers
 
 
 @pytest.mark.asyncio
-async def test_create_all_valid_relationship_types(client: AsyncClient, auth_headers: dict):
+async def test_create_all_valid_relationship_types(
+    client: AsyncClient, auth_headers: dict
+):
     """All five valid relationship types should be accepted."""
     valid_types = ["SUBDOMAIN_OF", "RESOLVES_TO", "USES", "RUNS_ON", "COVERS"]
     src = await create_asset(client, auth_headers, "src.example.com", "subdomain")
 
     for i, rel_type in enumerate(valid_types):
-        tgt = await create_asset(client, auth_headers, f"target-{i}.example.com", "domain")
+        tgt = await create_asset(
+            client, auth_headers, f"target-{i}.example.com", "domain"
+        )
         resp = await create_relationship(client, auth_headers, src, tgt, rel_type)
         assert resp.status_code == 201, f"Failed for type {rel_type}: {resp.text}"
 
 
 # ─── Duplicate Rejection ──────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
-async def test_duplicate_relationship_returns_409(client: AsyncClient, auth_headers: dict):
+async def test_duplicate_relationship_returns_409(
+    client: AsyncClient, auth_headers: dict
+):
     """Creating the exact same relationship twice returns a 409 Conflict."""
     src = await create_asset(client, auth_headers, "dup-sub.com", "subdomain")
     tgt = await create_asset(client, auth_headers, "dup-domain.com", "domain")
@@ -92,7 +107,9 @@ async def test_duplicate_relationship_returns_409(client: AsyncClient, auth_head
 
 
 @pytest.mark.asyncio
-async def test_same_pair_different_type_is_allowed(client: AsyncClient, auth_headers: dict):
+async def test_same_pair_different_type_is_allowed(
+    client: AsyncClient, auth_headers: dict
+):
     """Same source/target pair with a different relationship type is a distinct edge — allowed."""
     src = await create_asset(client, auth_headers, "multi-rel-sub.com", "subdomain")
     tgt = await create_asset(client, auth_headers, "multi-rel-domain.com", "domain")
@@ -105,29 +122,40 @@ async def test_same_pair_different_type_is_allowed(client: AsyncClient, auth_hea
 
 # ─── Validation ───────────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
-async def test_invalid_relationship_type_returns_422(client: AsyncClient, auth_headers: dict):
+async def test_invalid_relationship_type_returns_422(
+    client: AsyncClient, auth_headers: dict
+):
     src = await create_asset(client, auth_headers, "v-src.com", "domain")
     tgt = await create_asset(client, auth_headers, "v-tgt.com", "domain")
 
     resp = await client.post(
         "/api/v1/relationships",
-        json={"source_asset_id": src, "target_asset_id": tgt,
-              "relationship_type": "INVENTED_TYPE"},
+        json={
+            "source_asset_id": src,
+            "target_asset_id": tgt,
+            "relationship_type": "INVENTED_TYPE",
+        },
         headers=auth_headers,
     )
     assert resp.status_code == 422
 
 
 @pytest.mark.asyncio
-async def test_relationship_to_nonexistent_asset_returns_404(client: AsyncClient, auth_headers: dict):
+async def test_relationship_to_nonexistent_asset_returns_404(
+    client: AsyncClient, auth_headers: dict
+):
     src = await create_asset(client, auth_headers, "exists.com", "domain")
     fake_id = "00000000-0000-0000-0000-000000000000"
 
     resp = await client.post(
         "/api/v1/relationships",
-        json={"source_asset_id": src, "target_asset_id": fake_id,
-              "relationship_type": "SUBDOMAIN_OF"},
+        json={
+            "source_asset_id": src,
+            "target_asset_id": fake_id,
+            "relationship_type": "SUBDOMAIN_OF",
+        },
         headers=auth_headers,
     )
     # Should be 404 since target does not exist for this tenant
@@ -136,11 +164,11 @@ async def test_relationship_to_nonexistent_asset_returns_404(client: AsyncClient
 
 # ─── List & Pagination ────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_list_relationships_returns_all(client: AsyncClient, auth_headers: dict):
     assets = [
-        await create_asset(client, auth_headers, f"rel-asset-{i}.com")
-        for i in range(4)
+        await create_asset(client, auth_headers, f"rel-asset-{i}.com") for i in range(4)
     ]
     # Create 3 distinct relationships
     await create_relationship(client, auth_headers, assets[0], assets[1])
@@ -155,15 +183,18 @@ async def test_list_relationships_returns_all(client: AsyncClient, auth_headers:
 @pytest.mark.asyncio
 async def test_list_relationships_pagination(client: AsyncClient, auth_headers: dict):
     assets = [
-        await create_asset(client, auth_headers, f"pag-asset-{i}.com")
-        for i in range(4)
+        await create_asset(client, auth_headers, f"pag-asset-{i}.com") for i in range(4)
     ]
     await create_relationship(client, auth_headers, assets[0], assets[1])
     await create_relationship(client, auth_headers, assets[1], assets[2], "RESOLVES_TO")
     await create_relationship(client, auth_headers, assets[2], assets[3], "RUNS_ON")
 
-    page1 = await client.get("/api/v1/relationships", params={"limit": 2, "offset": 0}, headers=auth_headers)
-    page2 = await client.get("/api/v1/relationships", params={"limit": 2, "offset": 2}, headers=auth_headers)
+    page1 = await client.get(
+        "/api/v1/relationships", params={"limit": 2, "offset": 0}, headers=auth_headers
+    )
+    page2 = await client.get(
+        "/api/v1/relationships", params={"limit": 2, "offset": 2}, headers=auth_headers
+    )
 
     ids_p1 = {r["id"] for r in page1.json()["items"]}
     ids_p2 = {r["id"] for r in page2.json()["items"]}
@@ -174,6 +205,7 @@ async def test_list_relationships_pagination(client: AsyncClient, auth_headers: 
 
 # ─── Deletion ─────────────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_delete_relationship(client: AsyncClient, auth_headers: dict):
     src = await create_asset(client, auth_headers, "del-src.com")
@@ -182,7 +214,9 @@ async def test_delete_relationship(client: AsyncClient, auth_headers: dict):
     created = await create_relationship(client, auth_headers, src, tgt)
     rel_id = created.json()["id"]
 
-    del_resp = await client.delete(f"/api/v1/relationships/{rel_id}", headers=auth_headers)
+    del_resp = await client.delete(
+        f"/api/v1/relationships/{rel_id}", headers=auth_headers
+    )
     assert del_resp.status_code == 204
 
     # Relationship should no longer appear in the list
@@ -192,6 +226,7 @@ async def test_delete_relationship(client: AsyncClient, auth_headers: dict):
 
 
 # ─── Tenant Isolation ─────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_relationship_list_is_tenant_isolated(

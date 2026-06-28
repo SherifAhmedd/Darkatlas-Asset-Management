@@ -18,8 +18,8 @@ from httpx import AsyncClient
 
 from tests.conftest import SAMPLE_DATASET
 
-
 # ─── Helpers ──────────────────────────────────────────────────────────────────
+
 
 async def create_asset(client: AsyncClient, headers: dict, **overrides) -> dict:
     """Convenience wrapper to create a single asset and return its response body."""
@@ -35,7 +35,6 @@ async def create_asset(client: AsyncClient, headers: dict, **overrides) -> dict:
     resp = await client.post("/api/v1/assets", json=payload, headers=headers)
     assert resp.status_code == 201, resp.text
     return resp.json()
-
 
 
 @pytest.mark.asyncio
@@ -59,17 +58,22 @@ async def test_get_asset_by_id(client: AsyncClient, auth_headers: dict):
 
 
 @pytest.mark.asyncio
-async def test_get_nonexistent_asset_returns_404(client: AsyncClient, auth_headers: dict):
+async def test_get_nonexistent_asset_returns_404(
+    client: AsyncClient, auth_headers: dict
+):
     fake_id = "00000000-0000-0000-0000-000000000000"
     resp = await client.get(f"/api/v1/assets/{fake_id}", headers=auth_headers)
     assert resp.status_code == 404
 
 
 @pytest.mark.asyncio
-async def test_update_asset_merges_tags_and_metadata(client: AsyncClient, auth_headers: dict):
+async def test_update_asset_merges_tags_and_metadata(
+    client: AsyncClient, auth_headers: dict
+):
     """PUT update merges new tags/metadata into existing without wiping original data."""
     created = await create_asset(
-        client, auth_headers,
+        client,
+        auth_headers,
         tags=["original"],
         metadata={"env": "prod", "score": 1},
     )
@@ -91,7 +95,9 @@ async def test_update_asset_merges_tags_and_metadata(client: AsyncClient, auth_h
 @pytest.mark.asyncio
 async def test_delete_asset(client: AsyncClient, auth_headers: dict):
     created = await create_asset(client, auth_headers)
-    del_resp = await client.delete(f"/api/v1/assets/{created['id']}", headers=auth_headers)
+    del_resp = await client.delete(
+        f"/api/v1/assets/{created['id']}", headers=auth_headers
+    )
     assert del_resp.status_code == 204
     # Subsequent GET should 404
     get_resp = await client.get(f"/api/v1/assets/{created['id']}", headers=auth_headers)
@@ -99,17 +105,23 @@ async def test_delete_asset(client: AsyncClient, auth_headers: dict):
 
 
 @pytest.mark.asyncio
-async def test_create_duplicate_asset_returns_409(client: AsyncClient, auth_headers: dict):
+async def test_create_duplicate_asset_returns_409(
+    client: AsyncClient, auth_headers: dict
+):
     """Creating an asset with the same (type, value) twice raises a 409 Conflict."""
     await create_asset(client, auth_headers)
     resp = await client.post(
         "/api/v1/assets",
-        json={"type": "domain", "value": "test-asset.com", "source": "manual",
-              "tags": [], "metadata": {}},
+        json={
+            "type": "domain",
+            "value": "test-asset.com",
+            "source": "manual",
+            "tags": [],
+            "metadata": {},
+        },
         headers=auth_headers,
     )
     assert resp.status_code == 409
-
 
 
 @pytest.mark.asyncio
@@ -127,8 +139,11 @@ async def test_patch_status_active_to_stale(client: AsyncClient, auth_headers: d
 @pytest.mark.asyncio
 async def test_patch_status_stale_to_archived(client: AsyncClient, auth_headers: dict):
     created = await create_asset(client, auth_headers)
-    await client.patch(f"/api/v1/assets/{created['id']}/status",
-                       json={"status": "stale"}, headers=auth_headers)
+    await client.patch(
+        f"/api/v1/assets/{created['id']}/status",
+        json={"status": "stale"},
+        headers=auth_headers,
+    )
     resp = await client.patch(
         f"/api/v1/assets/{created['id']}/status",
         json={"status": "archived"},
@@ -139,7 +154,9 @@ async def test_patch_status_stale_to_archived(client: AsyncClient, auth_headers:
 
 
 @pytest.mark.asyncio
-async def test_patch_invalid_status_returns_422(client: AsyncClient, auth_headers: dict):
+async def test_patch_invalid_status_returns_422(
+    client: AsyncClient, auth_headers: dict
+):
     created = await create_asset(client, auth_headers)
     resp = await client.patch(
         f"/api/v1/assets/{created['id']}/status",
@@ -147,7 +164,6 @@ async def test_patch_invalid_status_returns_422(client: AsyncClient, auth_header
         headers=auth_headers,
     )
     assert resp.status_code == 422
-
 
 
 @pytest.mark.asyncio
@@ -167,9 +183,12 @@ async def test_filter_by_type(client: AsyncClient, auth_headers: dict):
 @pytest.mark.asyncio
 async def test_filter_by_status(client: AsyncClient, auth_headers: dict):
     active = await create_asset(client, auth_headers, value="active.com")
-    stale  = await create_asset(client, auth_headers, value="stale.com")
-    await client.patch(f"/api/v1/assets/{stale['id']}/status",
-                       json={"status": "stale"}, headers=auth_headers)
+    stale = await create_asset(client, auth_headers, value="stale.com")
+    await client.patch(
+        f"/api/v1/assets/{stale['id']}/status",
+        json={"status": "stale"},
+        headers=auth_headers,
+    )
 
     resp = await client.get(
         "/api/v1/assets", params={"status": "stale"}, headers=auth_headers
@@ -205,7 +224,6 @@ async def test_filter_by_value_contains(client: AsyncClient, auth_headers: dict)
     assert resp.json()["total"] == 2
 
 
-
 @pytest.mark.asyncio
 async def test_pagination_limit(client: AsyncClient, auth_headers: dict):
     for i in range(5):
@@ -233,7 +251,6 @@ async def test_pagination_offset(client: AsyncClient, auth_headers: dict):
     ids_p2 = {i["id"] for i in page2.json()["items"]}
     # No overlap between pages
     assert ids_p1.isdisjoint(ids_p2)
-
 
 
 @pytest.mark.asyncio
@@ -272,7 +289,9 @@ async def test_graph_returns_correct_structure(client: AsyncClient, auth_headers
 
 
 @pytest.mark.asyncio
-async def test_graph_isolated_asset_has_no_edges(client: AsyncClient, auth_headers: dict):
+async def test_graph_isolated_asset_has_no_edges(
+    client: AsyncClient, auth_headers: dict
+):
     """An asset with no relationships returns an empty graph (no nodes, no edges)."""
     created = await create_asset(client, auth_headers, value="isolated.com")
     resp = await client.get(
@@ -282,7 +301,6 @@ async def test_graph_isolated_asset_has_no_edges(client: AsyncClient, auth_heade
     graph = resp.json()
     assert graph["nodes"] == []
     assert graph["edges"] == []
-
 
 
 @pytest.mark.asyncio

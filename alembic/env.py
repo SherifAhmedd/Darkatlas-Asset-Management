@@ -11,9 +11,9 @@ from app.models.base import Base
 
 # Import all models here so their metadata is registered with Base
 # This is required for --autogenerate to detect all tables
-import app.models.user        # noqa: F401
-import app.models.asset       # noqa: F401
-import app.models.relationship # noqa: F401
+import app.models.user  # noqa: F401
+import app.models.asset  # noqa: F401
+import app.models.relationship  # noqa: F401
 
 # Alembic Config object — provides access to .ini file values
 config = context.config

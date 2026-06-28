@@ -1,15 +1,16 @@
 from uuid import UUID
 from typing import List
-from pydantic import BaseModel, field_validator
-
+from pydantic import BaseModel, field_validator, ValidationInfo
 
 RELATIONSHIP_TYPES = ["SUBDOMAIN_OF", "RESOLVES_TO", "USES", "RUNS_ON", "COVERS"]
 
 
 # ─── Request Schemas ──────────────────────────────────────────────────────────
 
+
 class RelationshipCreateRequest(BaseModel):
     """Schema for creating a single relationship link between two assets."""
+
     source_asset_id: UUID
     target_asset_id: UUID
     relationship_type: str
@@ -26,7 +27,7 @@ class RelationshipCreateRequest(BaseModel):
 
     @field_validator("target_asset_id")
     @classmethod
-    def source_target_must_differ(cls, v: UUID, info: "FieldValidationInfo") -> UUID:
+    def source_target_must_differ(cls, v: UUID, info: ValidationInfo) -> UUID:
         if "source_asset_id" in info.data and v == info.data["source_asset_id"]:
             raise ValueError("source_asset_id and target_asset_id must be different")
         return v
@@ -34,8 +35,10 @@ class RelationshipCreateRequest(BaseModel):
 
 # ─── Response Schemas ─────────────────────────────────────────────────────────
 
+
 class RelationshipResponse(BaseModel):
     """Full relationship response schema."""
+
     id: UUID
     tenant_id: UUID
     source_asset_id: UUID
@@ -47,6 +50,7 @@ class RelationshipResponse(BaseModel):
 
 class RelationshipListResponse(BaseModel):
     """Paginated list of relationships."""
+
     items: List[RelationshipResponse]
     total: int
     offset: int
