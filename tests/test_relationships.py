@@ -269,7 +269,9 @@ async def test_graph_cache_invalidated_after_new_relationship(
     for _ in range(2):
         resp = await client.get(f"/api/v1/assets/{src}/graph", headers=auth_headers)
         assert resp.status_code == 200
-        assert resp.json()["edges"] == [], "Expected empty graph before any relationship"
+        assert (
+            resp.json()["edges"] == []
+        ), "Expected empty graph before any relationship"
 
     # Add a relationship — this must invalidate the cache for src
     rel_resp = await create_relationship(client, auth_headers, src, tgt)
@@ -285,4 +287,3 @@ async def test_graph_cache_invalidated_after_new_relationship(
     )
     assert edges[0]["source"] == src
     assert edges[0]["target"] == tgt
-

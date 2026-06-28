@@ -21,9 +21,7 @@ async def get_redis() -> aioredis.Redis:
     """Return (or lazily create) the shared async Redis client."""
     global _redis_client
     if _redis_client is None:
-        _redis_client = aioredis.from_url(
-            settings.REDIS_URI, decode_responses=True
-        )
+        _redis_client = aioredis.from_url(settings.REDIS_URI, decode_responses=True)
     return _redis_client
 
 
@@ -39,7 +37,9 @@ async def get_cached_graph(tenant_id: str, asset_id: str) -> dict | None:
     """
     client = await get_redis()
     try:
-        data = await client.get(_GRAPH_KEY.format(tenant_id=tenant_id, asset_id=asset_id))
+        data = await client.get(
+            _GRAPH_KEY.format(tenant_id=tenant_id, asset_id=asset_id)
+        )
         return json.loads(data) if data else None
     except Exception:
         return None  # treat any Redis error as a cache miss
