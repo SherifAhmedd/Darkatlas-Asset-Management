@@ -14,6 +14,7 @@ from app.schemas.asset import (
     GraphNode,
     GraphEdge,
 )
+from app.core.cache import get_cached_graph, set_cached_graph
 from app.core.exceptions import NotFoundException, ConflictException
 
 
@@ -129,7 +130,17 @@ class AssetService:
         Build the adjacency list graph for a given asset.
         Returns the root asset, all adjacent assets as nodes,
         and all relationships as edges.
+
+        Results are cached in Redis by (tenant_id, asset_id) for 60 s.
+        The cache is invalidated whenever a relationship touching this asset
+        is created (see RelationshipService.create_relationship).
         """
+        # ── Cache read ────────────────────────────────────────────────────────
+        cached = await get_cached_graph(str(self.tenant_id), str(asset_id))
+        if cached is not None:
+            return AssetGraphResponse.model_validate(cached)
+
+        # ── DB fetch ──────────────────────────────────────────────────────────
         root = await self.get_by_id(asset_id)
         relationships: Sequence[Relationship] = await self.rel_repo.get_adjacent(
             asset_id
@@ -166,7 +177,7 @@ class AssetService:
             for rel in relationships
         ]
 
-        return AssetGraphResponse(
+        response = AssetGraphResponse(
             root_asset=GraphNode(
                 id=root.id,
                 type=root.type,
@@ -176,3 +187,12 @@ class AssetService:
             nodes=nodes,
             edges=edges,
         )
+
+        # ── Cache write (best-effort, never blocks) ───────────────────────────
+        await set_cached_graph(
+            str(self.tenant_id),
+            str(asset_id),
+            response.model_dump(mode="json"),
+        )
+
+        return response

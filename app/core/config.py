@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: Optional[str] = None
     LLM_MODEL: str = "gpt-4o-mini"
 
+    # Redis (graph cache)
+    REDIS_URI: str = "redis://redis:6379/0"
+
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def assemble_db_connection(cls, v: Optional[str], info: Any) -> Any:

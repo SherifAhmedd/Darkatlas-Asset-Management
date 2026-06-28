@@ -241,3 +241,48 @@ async def test_relationship_list_is_tenant_isolated(
 
     resp = await client.get("/api/v1/relationships", headers=second_auth_headers)
     assert resp.json()["total"] == 0
+
+
+# ─── Cache correctness ────────────────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_graph_cache_invalidated_after_new_relationship(
+    client: AsyncClient, auth_headers: dict
+):
+    """
+    Regression guard: /graph must NOT serve stale cached data after a new
+    relationship is added to one of the graph's endpoints.
+
+    Steps:
+      1. Create two assets (src, tgt).
+      2. Prime the cache by calling /graph on src twice — both should succeed
+         and return an empty edge list (no relationships yet).
+      3. Create a relationship from src → tgt.
+      4. Call /graph on src again — must now reflect the new edge, proving the
+         cache was invalidated by the relationship write.
+    """
+    src = await create_asset(client, auth_headers, "cache-src.example.com", "domain")
+    tgt = await create_asset(client, auth_headers, "cache-tgt.example.com", "domain")
+
+    # Prime the cache (two calls to ensure the second one reads from cache)
+    for _ in range(2):
+        resp = await client.get(f"/api/v1/assets/{src}/graph", headers=auth_headers)
+        assert resp.status_code == 200
+        assert resp.json()["edges"] == [], "Expected empty graph before any relationship"
+
+    # Add a relationship — this must invalidate the cache for src
+    rel_resp = await create_relationship(client, auth_headers, src, tgt)
+    assert rel_resp.status_code == 201
+
+    # Graph must now include the new edge (stale cache would return empty list)
+    graph_resp = await client.get(f"/api/v1/assets/{src}/graph", headers=auth_headers)
+    assert graph_resp.status_code == 200
+    edges = graph_resp.json()["edges"]
+    assert len(edges) == 1, (
+        f"Expected 1 edge after relationship creation, got {len(edges)}. "
+        "Cache was not invalidated."
+    )
+    assert edges[0]["source"] == src
+    assert edges[0]["target"] == tgt
+

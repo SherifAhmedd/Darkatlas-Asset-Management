@@ -26,6 +26,17 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+      # Redis for graph cache integration tests
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -55,4 +66,5 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: darkatlas_test
           SECRET_KEY: "test_secret_key_secret_key_secret_key"
+          REDIS_URI: redis://localhost:6379/0
         run: pytest -v --tb=short

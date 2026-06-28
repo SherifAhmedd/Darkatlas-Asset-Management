@@ -1,3 +1,4 @@
+import asyncio
 from typing import Sequence
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,6 +8,7 @@ from app.repositories.relationship_repository import RelationshipRepository
 from app.repositories.asset_repository import AssetRepository
 from app.schemas.relationship import RelationshipCreateRequest
 from app.core.exceptions import NotFoundException, ConflictException
+from app.core.cache import invalidate_graph
 
 
 class RelationshipService:
@@ -74,7 +76,14 @@ class RelationshipService:
             target_asset_id=payload.target_asset_id,
             relationship_type=payload.relationship_type,
         )
-        return await self.rel_repo.create(new_rel)
+        result = await self.rel_repo.create(new_rel)
+
+        # Invalidate graph cache for both endpoints — best-effort, concurrent
+        await asyncio.gather(
+            invalidate_graph(str(self.tenant_id), str(payload.source_asset_id)),
+            invalidate_graph(str(self.tenant_id), str(payload.target_asset_id)),
+        )
+        return result
 
     async def list_relationships(
         self,
