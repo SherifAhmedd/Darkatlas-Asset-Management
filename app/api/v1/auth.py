@@ -58,13 +58,16 @@ async def register(
     return TokenResponse(access_token=token)
 
 
+from fastapi.security import OAuth2PasswordRequestForm
+
+
 @router.post(
     "/login",
     response_model=TokenResponse,
     summary="Login and receive a JWT token",
 )
 async def login(
-    payload: UserLoginRequest,
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> TokenResponse:
     """
@@ -73,12 +76,12 @@ async def login(
     Returns a JWT bearer token to use in the `Authorization` header
     for all protected endpoints.
     """
-    result = await db.execute(select(User).where(User.username == payload.username))
+    result = await db.execute(select(User).where(User.username == form_data.username))
     user = result.scalar_one_or_none()
 
     # Use the same error message for both missing user and wrong password
     # to prevent username enumeration attacks
-    if not user or not verify_password(payload.password, user.hashed_password):
+    if not user or not verify_password(form_data.password, user.hashed_password):
         raise UnauthorizedException(message="Invalid username or password")
 
     token = create_access_token(data={"sub": user.username})

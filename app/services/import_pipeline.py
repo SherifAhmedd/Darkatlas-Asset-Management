@@ -90,9 +90,9 @@ class ImportPipeline:
                 existing.last_seen = now
 
                 # Metadata: incoming keys override existing (freshness rule)
-                merged_metadata = dict(existing.metadata)
+                merged_metadata = dict(existing.asset_metadata)
                 merged_metadata.update(item.metadata)
-                existing.metadata = merged_metadata
+                existing.asset_metadata = merged_metadata
 
                 # Tags: merge, deduplicate, sort for determinism
                 existing.tags = sorted(list(set(existing.tags + item.tags)))
@@ -110,7 +110,7 @@ class ImportPipeline:
                     status=item.status,
                     source=item.source,
                     tags=sorted(list(set(item.tags))),
-                    metadata=item.metadata,
+                    asset_metadata=item.metadata,
                     first_seen=now,
                     last_seen=now,
                 )

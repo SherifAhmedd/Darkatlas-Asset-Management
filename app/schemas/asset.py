@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from uuid import UUID
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, Field
 
 
 # ─── Enums as Literals ────────────────────────────────────────────────────────
@@ -76,7 +76,7 @@ class AssetResponse(BaseModel):
     first_seen: datetime
     last_seen: datetime
     tags: List[str]
-    metadata: Dict[str, Any]
+    metadata: Dict[str, Any] = Field(..., validation_alias="asset_metadata")
 
     model_config = {"from_attributes": True}
 
