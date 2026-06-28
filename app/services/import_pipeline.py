@@ -117,8 +117,13 @@ class ImportPipeline:
                 self.db.add(new_asset)
                 await self.db.flush()
                 await self.db.refresh(new_asset)
+                
+                # Add to existing_map so subsequent duplicates in the same batch get merged
+                existing_map[key] = new_asset
+                
                 temp_id_to_uuid[item.id] = new_asset.id
                 created_count += 1
+
 
         # Stage 5: Relationship Mapping
         relationships_created = 0
