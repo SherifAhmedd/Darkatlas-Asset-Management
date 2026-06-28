@@ -2,6 +2,7 @@ from typing import Optional
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.encoders import jsonable_encoder
 
 class APIException(Exception):
     def __init__(self, status_code: int, message: str, detail: Optional[dict] = None):
@@ -50,6 +51,6 @@ def register_exception_handlers(app: FastAPI) -> None:
             content={
                 "status": "error",
                 "message": "Validation failed on request parameter/body",
-                "detail": exc.errors()
+                "detail": jsonable_encoder(exc.errors())
             }
         )

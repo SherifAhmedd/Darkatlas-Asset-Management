@@ -82,7 +82,7 @@ class AssetService:
             status=payload.status,
             source=payload.source,
             tags=sorted(list(set(payload.tags))),
-            metadata=payload.metadata,
+            asset_metadata=payload.metadata,
             first_seen=now,
             last_seen=now,
         )
@@ -97,9 +97,9 @@ class AssetService:
             asset.tags = sorted(list(set(asset.tags + payload.tags)))
         if payload.metadata is not None:
             # Incoming keys override existing ones (freshness rule)
-            merged = dict(asset.metadata)
+            merged = dict(asset.asset_metadata)
             merged.update(payload.metadata)
-            asset.metadata = merged
+            asset.asset_metadata = merged
         if payload.source is not None:
             asset.source = payload.source
 

@@ -24,15 +24,20 @@ dependencies = [
     "httpx>=0.27.0",
 ]
 
-[dependency-groups]
-dev = [
-    "pytest>=8.1.1",
-    "pytest-asyncio>=0.23.5",
-    "pytest-cov>=4.1.0",
-    "black>=24.2.0",
-    "ruff>=0.3.3",
-]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.1.1",
+    "pytest-asyncio>=0.23.5",
+    "pytest-cov>=4.1.0",
+    "httpx>=0.27.0",
+    "black>=24.2.0",
+    "ruff>=0.3.3",
+]

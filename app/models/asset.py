@@ -22,7 +22,7 @@ class Asset(Base):
     last_seen = Column(DateTime(timezone=True), nullable=False)
     source = Column(String, nullable=False, default="import")
     tags = Column(ARRAY(String), nullable=False, default=list)
-    metadata = Column(JSONB, nullable=False, default=dict)
+    asset_metadata = Column("metadata", JSONB, nullable=False, default=dict)
 
     __table_args__ = (
         UniqueConstraint("tenant_id", "type", "value", name="uq_asset_tenant_type_value"),
